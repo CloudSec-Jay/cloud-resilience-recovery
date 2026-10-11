@@ -1,0 +1,25 @@
+let vaults = Resources.*[ Type == 'AWS::Backup::BackupVault' ]
+let plans = Resources.*[ Type == 'AWS::Backup::BackupPlan' ]
+let restore_plans = Resources.*[ Type == 'AWS::Backup::RestoreTestingPlan' ]
+let restore_selections = Resources.*[ Type == 'AWS::Backup::RestoreTestingSelection' ]
+
+rule recovery_vault_present {
+  %vaults !empty
+}
+
+rule recovery_vault_is_encrypted when %vaults !empty {
+  %vaults.Properties.EncryptionKeyArn exists
+}
+
+rule backup_plan_present {
+  %plans !empty
+}
+
+rule restore_testing_present {
+  %restore_plans !empty
+  %restore_selections !empty
+}
+
+rule restore_testing_targets_ebs when %restore_selections !empty {
+  %restore_selections.Properties.ProtectedResourceType == 'EBS'
+}

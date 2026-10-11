@@ -1,0 +1,57 @@
+name: Validate recovery scaffold
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install CloudFormation validator
+        run: python -m pip install cfn-lint==1.46.0
+
+      - name: Run scorecard tests
+        run: python -m unittest discover -s tools/tests -v
+
+      - name: Parse evidence templates
+        run: python -m json.tool evidence/recovery-test-template.json >/dev/null
+
+      - name: Exercise scorecard example
+        run: python tools/recovery_scorecard.py tools/tests/fixtures/passing-drill.json
+
+      - name: Lint CloudFormation
+        run: cfn-lint cloudformation/backup-foundation.yaml
+
+      - name: Install CloudFormation Guard
+        env:
+          CFN_GUARD_VERSION: 3.2.0
+          CFN_GUARD_SHA256: c78f7a1a6c2674f7edbf0ebdc0590126487a14b103e434aea31205a4d1034d21
+        run: |
+          curl --fail --location --silent --show-error \
+            --output /tmp/cfn-guard.tar.gz \
+            "https://github.com/aws-cloudformation/cloudformation-guard/releases/download/${CFN_GUARD_VERSION}/cfn-guard-v3-x86_64-linux-latest.tar.gz"
+          echo "${CFN_GUARD_SHA256}  /tmp/cfn-guard.tar.gz" | sha256sum --check
+          mkdir -p /tmp/cfn-guard
+          tar -xzf /tmp/cfn-guard.tar.gz -C /tmp/cfn-guard
+          install /tmp/cfn-guard/cfn-guard-v3-x86_64-linux-latest/cfn-guard "$RUNNER_TEMP/cfn-guard"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Evaluate recovery guardrails
+        run: >-
+          cfn-guard validate
+          --rules cloudformation/guard/recovery.guard
+          --data cloudformation/backup-foundation.yaml
+          --show-summary fail

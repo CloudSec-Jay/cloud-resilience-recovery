@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cloud resilience and recovery engineering: objectives, restore testing, scorecards, and evidence.">
+  <title>Cloud Resilience &amp; Recovery · CloudSec-Jay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="https://cloudsec-jay.github.io/cloud-ops-engineering/" aria-label="Return to Cloud Operations Engineering">
+      <span class="brand-mark" aria-hidden="true">CJ</span>
+      <span>CloudSec-Jay</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#system">System</a>
+      <a href="#artifacts">Artifacts</a>
+      <a href="#boundaries">Boundaries</a>
+      <a class="nav-source" href="https://github.com/CloudSec-Jay/cloud-resilience-recovery">Source ↗</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">07 / RESILIENCE ENGINEERING</p>
+        <h1>Failure is expected.<br><em>Recovery must be proven.</em></h1>
+        <p class="lede">A reusable recovery lab for turning backup configuration into measurable restoration evidence—without confusing a completed backup job with a recovered workload.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#artifacts">Inspect the scaffold</a>
+          <a class="button secondary" href="https://github.com/CloudSec-Jay/cloud-resilience-recovery">View repository</a>
+        </div>
+        <p class="status"><span></span> Scaffold only · no deployment or completed drill claimed</p>
+      </div>
+
+      <aside class="recorder" aria-label="Recovery flight recorder">
+        <div class="recorder-head">
+          <span>RECOVERY / FLIGHT RECORDER</span>
+          <span class="record-light">ARMED</span>
+        </div>
+        <div class="recorder-screen">
+          <div class="screen-grid" aria-hidden="true"></div>
+          <p class="screen-label">REFERENCE OBJECTIVES</p>
+          <div class="metric">
+            <span>RTO</span><strong>120</strong><small>MIN</small>
+          </div>
+          <div class="metric">
+            <span>RPO</span><strong>1440</strong><small>MIN</small>
+          </div>
+          <div class="signal"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <p class="screen-note">Targets are scaffold defaults. Results require timestamped evidence.</p>
+        </div>
+        <div class="recorder-controls" aria-hidden="true">
+          <span>VAULT</span><span>RESTORE</span><span>VALIDATE</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="sequence" id="system" aria-labelledby="sequence-title">
+      <div class="section-intro">
+        <p class="eyebrow">THE RECOVERY LOOP</p>
+        <h2 id="sequence-title">Five events. One defensible result.</h2>
+        <p>The record follows the recovery path end to end. Passing requires both the objective and workload validation—not merely an AWS job status.</p>
+      </div>
+      <ol class="timeline">
+        <li><span>01</span><h3>Declare</h3><p>Start the RTO clock with a timezone-aware incident timestamp.</p></li>
+        <li><span>02</span><h3>Select</h3><p>Choose a recovery point and measure its age against RPO.</p></li>
+        <li><span>03</span><h3>Restore</h3><p>Create a separate EBS resource in an isolated test scope.</p></li>
+        <li><span>04</span><h3>Validate</h3><p>Run workload-specific integrity and usability checks.</p></li>
+        <li><span>05</span><h3>Decide</h3><p>Calculate the result and retain a sanitized evidence reference.</p></li>
+      </ol>
+    </section>
+
+    <section class="diagram-section" aria-labelledby="diagram-title">
+      <div class="section-intro compact">
+        <p class="eyebrow">REFERENCE PATH</p>
+        <h2 id="diagram-title">Protection is the input. Evidence is the output.</h2>
+      </div>
+      <div class="system-diagram">
+        <article><span class="node-id">SOURCE</span><h3>Protected EBS volume</h3><p>Exact approved ARN</p></article>
+        <span class="connector"><b>scheduled backup</b>→</span>
+        <article><span class="node-id">VAULT</span><h3>Encrypted recovery points</h3><p>Customer-managed KMS key</p></article>
+        <span class="connector"><b>restore test</b>→</span>
+        <article><span class="node-id">ISOLATE</span><h3>Separate restored volume</h3><p>Never overwrite the source</p></article>
+        <span class="connector"><b>validate</b>→</span>
+        <article class="output"><span class="node-id">RECORD</span><h3>RTO / RPO scorecard</h3><p>Sanitized evidence pointer</p></article>
+      </div>
+    </section>
+
+    <section class="artifacts" id="artifacts" aria-labelledby="artifacts-title">
+      <div class="section-intro">
+        <p class="eyebrow">RECOVERY WORKBENCH</p>
+        <h2 id="artifacts-title">The scaffold is inspectable.</h2>
+        <p>Every artifact is designed to be reviewed before it touches an AWS account.</p>
+      </div>
+      <div class="artifact-grid">
+        <a class="artifact" href="https://github.com/CloudSec-Jay/cloud-resilience-recovery/blob/main/cloudformation/backup-foundation.yaml">
+          <span class="artifact-no">01</span><div><p>INFRASTRUCTURE</p><h3>Backup foundation</h3><span>Encrypted vault, EBS backup plan, and scheduled restore-testing resources.</span></div><b>↗</b>
+        </a>
+        <a class="artifact" href="https://github.com/CloudSec-Jay/cloud-resilience-recovery/blob/main/runbooks/ebs-restore-drill.md">
+          <span class="artifact-no">02</span><div><p>PROCEDURE</p><h3>EBS restore drill</h3><span>Preconditions, isolated restore, validation, evidence, and cleanup.</span></div><b>↗</b>
+        </a>
+        <a class="artifact" href="https://github.com/CloudSec-Jay/cloud-resilience-recovery/blob/main/tools/recovery_scorecard.py">
+          <span class="artifact-no">03</span><div><p>MEASUREMENT</p><h3>Recovery scorecard</h3><span>Calculates observed RTO and RPO from timestamped drill records.</span></div><b>↗</b>
+        </a>
+        <a class="artifact" href="https://github.com/CloudSec-Jay/cloud-resilience-recovery/blob/main/evidence/recovery-test-template.json">
+          <span class="artifact-no">04</span><div><p>EVIDENCE</p><h3>Sanitized record</h3><span>A public-safe schema for results without account identifiers or raw data.</span></div><b>↗</b>
+        </a>
+      </div>
+    </section>
+
+    <section class="boundaries" id="boundaries" aria-labelledby="boundaries-title">
+      <div class="section-intro compact">
+        <p class="eyebrow">CLEAR OWNERSHIP</p>
+        <h2 id="boundaries-title">One standard. Local recovery knowledge.</h2>
+      </div>
+      <div class="boundary-grid">
+        <article>
+          <span>HUB</span><h3>Cloud Operations Engineering</h3>
+          <p>Portfolio navigation, operational overview, and links to recovery work. It keeps workload-facing operational context.</p>
+        </article>
+        <article class="center">
+          <span>STANDARD</span><h3>Cloud Resilience &amp; Recovery</h3>
+          <p>Reusable objectives, restore-testing patterns, drill procedure, scorecard logic, and the sanitized evidence contract.</p>
+        </article>
+        <article>
+          <span>IMPLEMENTATION</span><h3>Workload repositories</h3>
+          <p>Resource wiring, application-consistent hooks, mount and startup ordering, integrity checks, rollback, and ownership.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="provenance" aria-labelledby="provenance-title">
+      <div>
+        <p class="eyebrow">GROUND TRUTH</p>
+        <h2 id="provenance-title">Built from work already present.</h2>
+      </div>
+      <div class="provenance-copy">
+        <p>The starting pattern comes from the existing Dragonwilds workload: retained encrypted EBS world storage, AWS Backup resources, configurable retention, and controlled recovery instructions.</p>
+        <p>This repository extracts the reusable method. Everything beyond that source material is labeled as a scaffold until a real account deployment and restore drill produce evidence.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Cloud Resilience &amp; Recovery</p>
+    <p>Part of <a href="https://cloudsec-jay.github.io/cloud-ops-engineering/">Cloud Operations Engineering</a></p>
+  </footer>
+</body>
+</html>

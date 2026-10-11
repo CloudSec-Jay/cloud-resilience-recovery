@@ -1,0 +1,15 @@
+{
+  "drill_id": "sanitized-example",
+  "workload": "example-ebs-workload",
+  "incident_declared_at": "2026-01-15T14:00:00Z",
+  "recovery_point_created_at": "2026-01-15T02:00:00Z",
+  "restore_started_at": "2026-01-15T14:10:00Z",
+  "resource_restored_at": "2026-01-15T14:48:00Z",
+  "validation_completed_at": "2026-01-15T15:05:00Z",
+  "rto_target_minutes": 120,
+  "rpo_target_minutes": 1440,
+  "validation_passed": true,
+  "evidence_reference": "protected-store://replace-with-sanitized-reference",
+  "notes": "Illustrative timestamps only; replace with a real sanitized drill record."
+}
+

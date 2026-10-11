@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Scaffold an encrypted AWS Backup vault, daily EBS protection, and scheduled
+  restore testing. This template defines intended infrastructure only; it does
+  not claim a deployment or a successful recovery test.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  com.aws.cloudformation.Context:
+    why: Establish a reusable recovery-testing baseline based on the existing Dragonwilds EBS backup pattern.
+    must: Require explicit resource, KMS key, and least-privilege service-role ARNs before deployment.
+    mutable: Schedule, retention, and recovery targets may be tuned through reviewed parameters.
+
+Parameters:
+  ProjectPrefix:
+    Type: String
+    Default: resilience_lab
+    Description: Lowercase prefix used by AWS Backup restore-testing resources.
+    AllowedPattern: '^[a-z][a-z0-9_]{2,40}$'
+    ConstraintDescription: Use 3-41 lowercase letters, numbers, or underscores, beginning with a letter.
+  ProtectedEbsVolumeArn:
+    Type: String
+    Description: ARN of the existing EBS volume selected for recovery testing.
+    AllowedPattern: '^arn:(aws|aws-us-gov|aws-cn):ec2:[a-z0-9-]+:[0-9]{12}:volume/vol-[a-f0-9]+$'
+    ConstraintDescription: Enter a complete EBS volume ARN.
+  BackupServiceRoleArn:
+    Type: String
+    Description: ARN of an existing least-privilege role used by AWS Backup for backup jobs.
+    AllowedPattern: '^arn:(aws|aws-us-gov|aws-cn):iam::[0-9]{12}:role/.+$'
+    ConstraintDescription: Enter a complete IAM role ARN.
+  RestoreServiceRoleArn:
+    Type: String
+    Description: ARN of an existing least-privilege role used by AWS Backup restore testing.
+    AllowedPattern: '^arn:(aws|aws-us-gov|aws-cn):iam::[0-9]{12}:role/.+$'
+    ConstraintDescription: Enter a complete IAM role ARN.
+  BackupKmsKeyArn:
+    Type: String
+    Description: ARN of the customer-managed KMS key for the backup vault.
+    AllowedPattern: '^arn:(aws|aws-us-gov|aws-cn):kms:[a-z0-9-]+:[0-9]{12}:key/[a-fA-F0-9-]+$'
+    ConstraintDescription: Enter a complete KMS key ARN.
+  BackupRetentionDays:
+    Type: Number
+    Default: 35
+    MinValue: 7
+    MaxValue: 365
+    Description: Days to retain recovery points and search for restore-test candidates.
+  BackupScheduleExpression:
+    Type: String
+    Default: cron(0 5 * * ? *)
+    Description: EventBridge-compatible schedule for daily backups, expressed in UTC.
+  RestoreScheduleExpression:
+    Type: String
+    Default: cron(0 7 ? * SUN#1 *)
+    Description: EventBridge-compatible schedule for monthly restore testing, expressed in UTC.
+  RtoTargetMinutes:
+    Type: Number
+    Default: 120
+    MinValue: 1
+    Description: Documented recovery time objective used for resource tags and scorecards.
+  RpoTargetMinutes:
+    Type: Number
+    Default: 1440
+    MinValue: 1
+    Description: Documented recovery point objective used for resource tags and scorecards.
+
+Resources:
+  RecoveryVault:
+    Type: AWS::Backup::BackupVault
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Preserve encrypted recovery points independently from the protected EBS volume.
+        must: Retain the vault during stack deletion and encrypt it with the supplied customer-managed KMS key.
+        mutable: Vault access policy and lock configuration may be added after account-level review.
+    Properties:
+      BackupVaultName: !Sub '${AWS::StackName}-recovery'
+      EncryptionKeyArn: !Ref BackupKmsKeyArn
+      BackupVaultTags:
+        Project: !Ref ProjectPrefix
+        Purpose: recovery-testing
+        RTO-Minutes: !Ref RtoTargetMinutes
+        RPO-Minutes: !Ref RpoTargetMinutes
+
+  BackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Create recovery points on a predictable schedule for the selected EBS volume.
+        must: Store recovery points in the encrypted retained vault and expire them only after the configured retention period.
+        mutable: Schedule, windows, and retention may change when recovery objectives are reviewed.
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Sub '${AWS::StackName}-daily'
+        BackupPlanRule:
+          - RuleName: daily_ebs_backup
+            TargetBackupVault: !Ref RecoveryVault
+            ScheduleExpression: !Ref BackupScheduleExpression
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 360
+            Lifecycle:
+              DeleteAfterDays: !Ref BackupRetentionDays
+            RecoveryPointTags:
+              Project: !Ref ProjectPrefix
+              Purpose: recovery-testing
+      BackupPlanTags:
+        Project: !Ref ProjectPrefix
+        Purpose: recovery-testing
+
+  BackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Bind the reusable backup plan to one explicitly approved EBS volume.
+        must: Use the supplied least-privilege service role and exact resource ARN rather than broad tag discovery.
+        mutable: The protected ARN may be replaced through reviewed stack inputs.
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        SelectionName: protected_ebs_volume
+        IamRoleArn: !Ref BackupServiceRoleArn
+        Resources:
+          - !Ref ProtectedEbsVolumeArn
+
+  RestoreTestingPlan:
+    Type: AWS::Backup::RestoreTestingPlan
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Exercise restoration on a schedule instead of treating backup job completion as proof of recoverability.
+        must: Select only snapshot recovery points from this stack's vault and use the configured testing window.
+        mutable: Schedule and selection window may change after measured drills.
+    Properties:
+      RestoreTestingPlanName: !Sub '${ProjectPrefix}_monthly_restore'
+      ScheduleExpression: !Ref RestoreScheduleExpression
+      ScheduleExpressionTimezone: UTC
+      StartWindowHours: 24
+      RecoveryPointSelection:
+        Algorithm: LATEST_WITHIN_WINDOW
+        IncludeVaults:
+          - !GetAtt RecoveryVault.BackupVaultArn
+        RecoveryPointTypes:
+          - SNAPSHOT
+        SelectionWindowDays: !Ref BackupRetentionDays
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectPrefix
+        - Key: Purpose
+          Value: recovery-testing
+
+  RestoreTestingSelection:
+    Type: AWS::Backup::RestoreTestingSelection
+    DependsOn: RestoreTestingPlan
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Define the EBS resource and validation window exercised by the restore-testing plan.
+        must: Use an existing least-privilege restore role and create only a separate test restoration.
+        mutable: Restore metadata and protected-resource scope may be extended after workload-specific review.
+    Properties:
+      IamRoleArn: !Ref RestoreServiceRoleArn
+      ProtectedResourceArns:
+        - !Ref ProtectedEbsVolumeArn
+      ProtectedResourceType: EBS
+      RestoreTestingPlanName: !Sub '${ProjectPrefix}_monthly_restore'
+      RestoreTestingSelectionName: !Sub '${ProjectPrefix}_ebs_selection'
+      ValidationWindowHours: 24
+
+Outputs:
+  BackupVaultArn:
+    Description: ARN of the retained encrypted recovery vault.
+    Value: !GetAtt RecoveryVault.BackupVaultArn
+  BackupPlanId:
+    Description: Identifier of the daily EBS backup plan.
+    Value: !Ref BackupPlan
+  RestoreTestingPlanArn:
+    Description: ARN of the scheduled restore-testing plan.
+    Value: !GetAtt RestoreTestingPlan.RestoreTestingPlanArn
