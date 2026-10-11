@@ -92,8 +92,9 @@ footer p { margin-top:8px; font-size:11px; }
 @media (max-width:760px) { html { scroll-padding-top:120px; } .site-header { padding:18px 22px; flex-wrap:wrap; gap:18px; } nav { order:3; width:100%; justify-content:space-between; flex-wrap:wrap; gap:10px 14px; } }
 @media (max-width:620px) { html { scroll-padding-top:125px; } .site-header { padding:17px 22px; flex-wrap:wrap; } nav { order:3; width:100%; justify-content:space-between; gap:12px; } .hero-title,.hero-statement { padding:46px 24px; } .hero h1 { font-size:clamp(58px,19vw,78px); letter-spacing:-3px; } .principles article { padding:30px 24px; } .model,.path,.artifacts { padding:50px 24px; } .objective-grid,.artifact-grid { grid-template-columns:1fr; } .objective+.objective { border-left:0; border-top:1px solid var(--line); } .objective { padding:28px 24px; } .recovery-path li { grid-template-columns:55px 1fr; } .recovery-path li>span { padding-left:12px; } .recovery-path li>div { padding:23px 20px; grid-template-columns:1fr; gap:8px; } .scope-intro { padding:50px 24px; } .scope-list article { padding:28px 24px; } .provenance { padding:40px 24px; grid-template-columns:1fr; gap:18px; } .provenance>p:last-child { font-size:20px; } footer { padding:30px 24px; flex-direction:column; align-items:flex-start; } }
 
-/* Shared bar linking every portfolio Pages site; inherits this site's colors. */
-.pages-bar { display: flex; gap: 6px 22px; overflow-x: auto; padding: 9px 40px; border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent); font: 500 10px/1.6 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; scrollbar-width: none; }
-.pages-bar a { color: inherit; opacity: .68; text-decoration: none; }
-.pages-bar a:hover, .pages-bar a[aria-current] { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
-@media (max-width: 680px) { .pages-bar { padding: 9px 24px; } }
+/* Header nav carries links to every portfolio Pages site. */
+.site-header nav { flex-wrap: wrap; gap: 8px 20px; }
+@media (max-width: 1100px) {
+  .site-header { flex-wrap: wrap; }
+  .site-header nav { order: 3; width: 100%; }
+}
