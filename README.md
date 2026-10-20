@@ -1,5 +1,7 @@
 # Cloud Resilience & Recovery
 
+> **Field Project 05 of the [Cloud Operations Engineering](https://github.com/CloudSec-Jay/cloud-ops-engineering) system.** Each project lives in its own repository and links back to the hub. [Portfolio site](https://cloudsec-jay.github.io/cloud-ops-engineering/) · [Project site](https://cloudsec-jay.github.io/cloud-resilience-recovery/)
+
 Recovery engineering that turns backup configuration into measured restoration evidence.
 
 The initial scaffold models protection and periodic restore testing for an Amazon EBS volume with AWS Backup, based on the recovery pattern already present in Dragonwilds. It separates four questions that are often collapsed into “the backup succeeded”:

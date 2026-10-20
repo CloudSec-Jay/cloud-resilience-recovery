@@ -104,3 +104,8 @@ footer p { margin-top:8px; font-size:11px; }
 .header-button { padding: 7px 14px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); font-size: 12px; white-space: nowrap; }
 .header-button:hover { background: color-mix(in srgb, currentColor 8%, transparent); text-decoration: none; }
 .site-header nav a[aria-current] { color: var(--ink); text-decoration: underline; text-underline-offset: 6px; }
+
+/* Shared portfolio breadcrumb, matching the other project sites. */
+.breadcrumb { display:flex; flex-wrap:wrap; gap:.55rem; padding:1.15rem 48px; border-bottom:1px solid var(--line); color:var(--muted); font:.72rem/1.4 var(--mono); }
+footer.site-footer { border-top:1px solid var(--line); }
+@media (max-width:620px) { .breadcrumb { padding-inline:24px; } }
